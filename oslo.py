@@ -43,6 +43,7 @@ def relax(site, slopes):
 
 def thresh_update(site, thresh, p):
     """
+    Updates the threshhold slope for a given site. Notice that we always call this immediately after thresh_update.
 
     :param site: int, where do we adjust threshhold slope?
     :param thresh: list of ints, threshhold slopes
@@ -60,10 +61,25 @@ def thresh_update(site, thresh, p):
         thresh[site] = 2
     return thresh
 
+def relax_and_thresh(site, slopes, thresh, p):
+    """
+    This combines the relax() function and the thresh_update() function.
+    Designed to prevent user errors from calling one function without the other.
+
+    :param site:
+    :param slopes:
+    :param thresh:
+    :param p:
+    :return:
+    """
+    slopes = relax(site,slopes)
+    thresh = thresh_update(site, thresh, p)
+    return slopes, thresh
+
+
 def relaxation(slopes, thresh, p):
     """
-    I am assuming that initially only slope[0] can relax.
-
+    Relaxes everything that can relax.
     I think instead of using a loop in a loop, you can save on unnecessary comparisons by representing
     the as a binary tree. Then you can use tree traversal algorithms.
 
@@ -84,8 +100,7 @@ def relaxation(slopes, thresh, p):
             s += 1
             #print(slopes)
             #print("relaxing index {} because {} > {}".format(index, slopes[index], thresh[index]))
-            slopes = relax(index, slopes)
-            thresh = thresh_update(index, thresh, p)
+            slopes, thresh = relax_and_thresh(index, slopes, thresh, p)
 
             hitlist.appendleft(index)
 
@@ -96,6 +111,18 @@ def relaxation(slopes, thresh, p):
                 hitlist.append(index+1)
     return slopes, s
 
+def relax_and_thresh_init(size = 4, p = 0.5, seed = 0):
+    """
+    Sets up all the parameters (for multiple "main" functions.)
+    :return:
+    """
+    slopes = [0] * size
+    np.random.seed(seed)
+    thresh = [1 if rand <= p else 2 for rand in np.random.rand(size)]
+
+    return slopes, thresh
+
+
 def height(slopes):
     """
     Measures the height of the pile.
@@ -103,8 +130,44 @@ def height(slopes):
     """
     return sum(slopes)
 
+def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0):
+    """
+    Solves task 2a.
+    'Starting from an empty system, measure and plot the total height of the pile
+    as a function of time t for a range of system sizes.'
 
-def main(size=4, p=0.0):
+    :param size: int, how big is system?
+    :param p: when p=1, all thresh is 1, when p =0, all thresh is 2.
+    :param t_max: cast into int, how many grains do we add?
+    :param seed: int, change this to generate different runs.
+    :param log: bool, generate linear plot or loglog plot?
+    :return: plot of heights with grains added.
+    """
+    slopes, thresh = relax_and_thresh_init(size, p, seed)
+    heights = []
+
+    for i in range(int(t_max)):
+        slopes = drive(slopes)
+        slopes = relaxation(slopes, thresh, p)[0]
+        heights.append(height(slopes))
+
+    recurrent_heights = heights[2000:]  # This is a rough way to cut transient and recurrent configurations.
+    print(sum(recurrent_heights)/ len(recurrent_heights))
+
+    fig = plt.plot(heights)
+    plt.xlabel("Grains in system")
+    plt.ylabel("Slope height after relaxation")
+
+    if log:
+        plt.xscale("log")
+        plt.yscale("log")
+    else:
+        plt.xscale("linear")
+        plt.yscale("linear")
+    return plt.gca()
+
+
+def main(size=4, p=0.0, t_max = 1e5, seed = 0):
     """
 
     :param size: system size, the number of sites in the 1 dimensional lattice.
@@ -112,9 +175,7 @@ def main(size=4, p=0.0):
     :return: nothing?
     """
 
-    slopes = [0] * size
-    np.random.seed(0)
-    thresh = [1 if rand <= p else 2 for rand in np.random.rand(size)]
+    slopes, thresh = relax_and_thresh_init(size, p, seed)
 
     ava = []
     heights = []
@@ -122,15 +183,19 @@ def main(size=4, p=0.0):
     scaled_time = []
     size_sq = size * size
 
-    for i in np.arange(1e5):
+    for i in range(int(t_max)):
         drive(slopes)
         ava.append(relaxation(slopes, thresh, p)[1])
         h = sum(slopes)
         heights.append(h)
         scaled_height.append(h/size)
         scaled_time.append(i/(size_sq))
-    return plt.plot(scaled_time,scaled_height)
-    return plt.hist(heights, log=True)
+
+    print(sum(heights[2000:])/ len(heights[2000:]))
+
+    return plt.plot(heights)
+    #return plt.plot(scaled_time,scaled_height)
+    #return plt.hist(heights, log=True)
 
 
 if __name__ == "__main__":
