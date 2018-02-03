@@ -208,34 +208,43 @@ def moving_average(heights, window = 25):
     """
 
     :param heights: list of ints, how high is ricepile.
+    :param window: ints, how far in each direction to take values .
     :return: smooth_heights: the same thing, but  with the temporal average taken between [t-W] and t+W
     """
     def add_window(heights, site, window):
         """
-        helper function. The main benefit is that we can feed it wariable window sizes.
+        helper function. The main benefit is that we can feed it variable window sizes.
+        slicing a list creates a new list, slowing performance.
+        Would I rather use a for loop and iterate over this?
+
         :param heights: list of unsmoothed data
         :param site: integer, indexing heights, where is the centre of moving average.
         :param window:
         :return: windowed_sum
         """
+        if window >= len(heights)/2:
+            window = int(len(heights)/10)
+
         if site < window:
-            pre_slice = heights[:2*site]
+            pre_slice = heights[:2*site+1]
+            #print("for site {}, pre-window is from {} to {}, len {}".format(site, 0, 2*site+1, len(pre_slice)))
             windowed_sum = sum(pre_slice)/len(pre_slice)
-            print("for site {}, pre-window is from {} to {}".format(site, 0, 2*site))
-        elif site + window > len(heights):
-            slice = heights[len(heights)-2*site:]
-            windowed_sum = sum(slice)
-            print("for site {}, post-window is from {} to {}".format(site, len(heights)-2*site, len(heights)))
+        elif site + window > len(heights) - 1:
+            post_slice = heights[2*site+1-len(heights):]
+            #print("for site {}, post-window is from {} to {}, len {}".format(site, 2*site+1-len(heights), len(heights), len(post_slice)))
+            windowed_sum = sum(post_slice)/len(post_slice)
         else:
-            post_slice = heights[site - window: site + window + 1]
-            windowed_sum = sum(post_slice)
-            print("for site {}, window is from {} to {}".format(site, site-window, site+window+1))
+            slice = heights[site - window: site + window + 1]
+            #print("for site {}, window is from {} to {}, len {}".format(site, site-window, site+window+1, len(slice)))
+            windowed_sum = sum(slice)/len(slice)
         return windowed_sum
+
+    if not heights:
+        return heights #Deals with empty list edge case.
 
     smooth = []
     for site in range(len(heights)):
-        smooth.append(add_window(height, site, window))
-
+        smooth.append(add_window(heights, site, window))
     return smooth
 
 def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname="Height(grains)"):
@@ -250,7 +259,7 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname=
     :param seed: int, change this to generate different runs.
     :param log: bool, generate linear plot or loglog plot?
     :param save: bool, do you want to save the figure?
-    :return: plot of heights with grains added.
+    :return: heights, prints out average recurrent height also produces a plot.
     """
     slopes, thresh = relax_and_thresh_init(size, p, seed)
     heights = []
@@ -262,7 +271,7 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname=
 
     recurrent_heights = heights[2000:]  # This is a rough way to cut transient and recurrent configurations.
     avg = sum(recurrent_heights)/ len(recurrent_heights)
-    #print(avg)
+    print("the average recurrent height of the system is " + str(avg))
 
     fig = plt.plot(heights)
     plt.xlabel("Grains in system")
@@ -278,7 +287,7 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname=
         plt.yscale("linear")
         if save:
             plt.savefig(figname)
-    return avg
+    return heights
 
 def main_2b():
     """
