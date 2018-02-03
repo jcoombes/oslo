@@ -1,5 +1,9 @@
 """
 A simple implementation of the Oslo model, built using test-driven development.
+
+TODO:
+def main_2c
+
 """
 import numpy as np
 import collections
@@ -76,7 +80,6 @@ def relax_and_thresh(site, slopes, thresh, p):
     thresh = thresh_update(site, thresh, p)
     return slopes, thresh
 
-
 def relaxation(slopes, thresh, p):
     """
     Relaxes everything that can relax.
@@ -111,6 +114,39 @@ def relaxation(slopes, thresh, p):
                 hitlist.append(index+1)
     return slopes, s
 
+def relaxation_bifurcation(slopes, thresh, p):
+    """
+    Variant of relaxation function, used to build avalanche bifurcation diagrams.
+
+    :param slopes: list of ints.
+    :param thresh: list of ints, either 1 or 2.
+    :return: slopes, but after all the slopes that can relax, have relaxed.
+    """
+    if len(slopes) != len(thresh): raise IndexError
+
+    hitlist = collections.deque([0]) #list of indices on slope we would like to add.
+    bifurcate = []
+
+    while len(hitlist) > 0:
+        index = hitlist.popleft()
+
+        #print(index, sep="\t ")
+        if slopes[index] > thresh[index]:
+            bifurcate.append(index)
+            print(len(bifurcate))
+            #print(slopes)
+            #print("relaxing index {} because {} > {}".format(index, slopes[index], thresh[index]))
+            slopes, thresh = relax_and_thresh(index, slopes, thresh, p)
+
+            hitlist.appendleft(index)
+
+            if index > 0:
+                hitlist.appendleft(index-1)
+            if index < len(slopes)-1: #len(slopes) is one larger than the maximum index because zero-indexing.
+                #print(index, "<", len(slopes))
+                hitlist.append(index+1)
+    return slopes, bifurcate
+
 def relax_and_thresh_init(size = 4, p = 0.5, seed = 0):
     """
     Sets up all the parameters (for multiple "main" functions.)
@@ -122,7 +158,6 @@ def relax_and_thresh_init(size = 4, p = 0.5, seed = 0):
 
     return slopes, thresh
 
-
 def height(slopes):
     """
     Measures the height of the pile.
@@ -130,7 +165,80 @@ def height(slopes):
     """
     return sum(slopes)
 
-def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0):
+def main_bifurcation(size, p, t_max, seed):
+    """
+        Solves task 2a.
+        'Starting from an empty system, measure and plot the total height of the pile
+        as a function of time t for a range of system sizes.'
+
+        :param size: int, how big is system?
+        :param p: when p=1, all thresh is 1, when p =0, all thresh is 2.
+        :param t_max: cast into int, how many grains do we add?
+        :param seed: int, change this to generate different runs.
+        :return: plot of heights with grains added.
+        """
+    slopes, thresh = relax_and_thresh_init(size, p, seed)
+
+    bif = 'replaceme'
+    for i in range(int(t_max)):
+        slopes = drive(slopes)
+        slopes, bif = relaxation_bifurcation(slopes, thresh, p)
+        print(bif)
+
+    return bif
+
+def fiddling(size, p, t_max):
+    """
+    Trying to get a bifurcation image.
+    :return:
+    """
+    biffy = main_bifurcation(size, p, t_max, seed = 0)
+    canvas = np.zeros((max(biffy)+1, len(biffy)))
+
+    print(canvas)
+
+    for i in range(len(biffy)):
+        canvas[biffy[i]][i] = 1
+
+    sum(canvas)
+    plt.imshow(canvas)
+    return canvas
+
+def moving_average(heights, window = 25):
+    """
+
+    :param heights: list of ints, how high is ricepile.
+    :return: smooth_heights: the same thing, but  with the temporal average taken between [t-W] and t+W
+    """
+    def add_window(heights, site, window):
+        """
+        helper function. The main benefit is that we can feed it wariable window sizes.
+        :param heights: list of unsmoothed data
+        :param site: integer, indexing heights, where is the centre of moving average.
+        :param window:
+        :return: windowed_sum
+        """
+        if site < window:
+            pre_slice = heights[:2*site]
+            windowed_sum = sum(pre_slice)/len(pre_slice)
+            print("for site {}, pre-window is from {} to {}".format(site, 0, 2*site))
+        elif site + window > len(heights):
+            slice = heights[len(heights)-2*site:]
+            windowed_sum = sum(slice)
+            print("for site {}, post-window is from {} to {}".format(site, len(heights)-2*site, len(heights)))
+        else:
+            post_slice = heights[site - window: site + window + 1]
+            windowed_sum = sum(post_slice)
+            print("for site {}, window is from {} to {}".format(site, site-window, site+window+1))
+        return windowed_sum
+
+    smooth = []
+    for site in range(len(heights)):
+        smooth.append(add_window(height, site, window))
+
+    return smooth
+
+def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname="Height(grains)"):
     """
     Solves task 2a.
     'Starting from an empty system, measure and plot the total height of the pile
@@ -141,6 +249,7 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0):
     :param t_max: cast into int, how many grains do we add?
     :param seed: int, change this to generate different runs.
     :param log: bool, generate linear plot or loglog plot?
+    :param save: bool, do you want to save the figure?
     :return: plot of heights with grains added.
     """
     slopes, thresh = relax_and_thresh_init(size, p, seed)
@@ -152,7 +261,8 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0):
         heights.append(height(slopes))
 
     recurrent_heights = heights[2000:]  # This is a rough way to cut transient and recurrent configurations.
-    print(sum(recurrent_heights)/ len(recurrent_heights))
+    avg = sum(recurrent_heights)/ len(recurrent_heights)
+    #print(avg)
 
     fig = plt.plot(heights)
     plt.xlabel("Grains in system")
@@ -161,14 +271,27 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0):
     if log:
         plt.xscale("log")
         plt.yscale("log")
+        if save:
+            plt.savefig(figname + " loglog")
     else:
         plt.xscale("linear")
         plt.yscale("linear")
-    return plt.gca()
+        if save:
+            plt.savefig(figname)
+    return avg
 
+def main_2b():
+    """
+    Theoretical
+    """
+    pass
+
+def main_2c():
+    raise NotImplementedError
 
 def main(size=4, p=0.0, t_max = 1e5, seed = 0):
     """
+    DEPRECATED.
 
     :param size: system size, the number of sites in the 1 dimensional lattice.
     :param p: probability(thresh[i]==1), 0 <= p <= 1

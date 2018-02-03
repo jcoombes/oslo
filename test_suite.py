@@ -149,5 +149,18 @@ def test_thresh_is_random():
     assert sum / sample >= 1.24
     assert sum / sample <= 1.26
 
+def test_moving_average():
+    assert(oslo.moving_average(list(range(100)), 2) == list(range(100)))
+    assert(oslo.moving_average(list(range(100)), 20) == list(range(100)))
+    assert(oslo.moving_average(list(range(100)), 50) == list(range(100)))
+    assert(oslo.moving_average(list(range(100)), 200) == list(range(100)))
+    assert(oslo.moving_average(list(range(1000)), 200) == list(range(1000)))
+
+    assert(oslo.moving_average([2, 4, 6, 8, 10], 3) == [2, 4, 6, 8, 10])
+    assert(oslo.moving_average([6, 6, 6, 6, 6], 3) == [6, 6, 6, 6, 6])
+    assert(oslo.moving_average([6, 6, 6, 8, 6, 6, 6], 2) == [6, 6, 6.4, 6.4, 6.4, 6, 6])
+    assert(oslo.moving_average([6, 6, 6, 6, 8, 6, 6, 6, 6], 2) == [6, 6, 6.4, 6.4, 6.4, 6.4, 6.4, 6, 6])
+
+
 def test_main():
     assert 1
