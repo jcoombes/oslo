@@ -2,10 +2,14 @@
 A simple implementation of the Oslo model, built using test-driven development.
 
 TODO:
-def main_2c
+main_2d gives strange coeffs,
+check main_2c uses moving_average() correctly by calling it.
+take mean of crossover_times for a given system size. create a dict of system size, cutoff lookup values.
+measure height averaged over time.
 
 """
 import numpy as np
+import numpy.polynomial as poly #Used to fit a polynomial to crossover time graph.
 import collections #We need a double ended queue for our tree-search implementation of relaxation() function.
 import matplotlib.pyplot as plt
 import datetime #we want to uniquely name figures.
@@ -163,6 +167,7 @@ def relaxation_crossover(slopes, thresh, p):
 
     hitlist = collections.deque([0]) #list of site indices on slope we would like to relax.
     s = 0
+    cross = False
 
     while len(hitlist) > 0:
         index = hitlist.popleft()
@@ -325,7 +330,7 @@ def main_2a_plot(heights, log, save, figname):
         plt.yscale("linear")
         if save:
             plt.savefig(figname)
-    return fig
+    return fig, avg
 
 def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname="Height(grains)"):
     """
@@ -341,7 +346,7 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname=
     :param save: bool, do you want to save the figure?
     """
     heights = main_2a_measure(size, p, t_max, seed)
-    main_2a_plot(heights, log, save, figname)
+    return main_2a_plot(heights, log, save, figname)
 
 def main_2b():
     """
@@ -402,7 +407,7 @@ def main_2c_plot(save, *args):
 
         if save:
             file_identifier = str(datetime.datetime.now()).replace(".", "-").replace(" ","_").replace(":","_") #e.g. '2018-02-04__15:43:06-761532'
-            fig.savefig("Data_Collapse_" + file_identifier, format='png')
+            fig.savefig("Data_Collapse_" + file_identifier +'.png', format='png')
         return fig
 
 def main_2c(sizes=[4, 8, 16, 32, 64, 128], p = 0.5, scaled_t_max = 1e5, seed=0):
@@ -435,13 +440,63 @@ def main_2c(sizes=[4, 8, 16, 32, 64, 128], p = 0.5, scaled_t_max = 1e5, seed=0):
         t_max = int(size * size * scaled_t_max)
         print("Calculating for system size {} over {} timesteps".format(size, t_max))
         scaled_times, scaled_heights = main_2c_measure(size, p, t_max, seed)
+        scaled_heights = moving_average(scaled_heights)
         time_height_pair_list.append(scaled_times)
         time_height_pair_list.append(scaled_heights)
 
     return_fig = main_2c_plot(1, *time_height_pair_list)
     return return_fig
 
-def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, scaled_t_max=1e5, seed=0):
+def main_2d_measure(sizes, p, trials, seed):
+    """
+    Initially the sizes list is going to have to be len(sizes) == 1, because the plot function can only take two vectors.
+    :param syzes: list of ints, which system sizes would you like to plot?
+    :param p: input parameter to oslo model.
+    :param trials: how many t_c data points do you want for each system size.
+    :return: syze, list of in/ts, what is the system size under test.
+    :return: crossovers, list of crossover times.
+    """
+    syzes =  []
+    crossovers = []
+
+    for size in sizes:
+        for j in range(trials):
+            slopes, thresh = relax_and_thresh_init(size, p, seed)
+            crossed = False
+            tc = 0
+
+            while not crossed:
+                slopes = drive(slopes)
+                slopes, crossed = relaxation_crossover(slopes, thresh, p)[0::2]
+                tc += 1
+
+            syzes.append(size)
+            crossovers.append(tc)
+
+    return syzes, crossovers
+
+
+def main_2d_plot(syzes, crossovers):
+    """
+    Plots the mean cross-over time for a range of system sizes.
+    This seems to me like a ax.plot() with dots instead of lines.
+    :param syzes: list of int, system sizes.
+    :param crossovers: list of float, cross-over times.
+    :return: lovely plot of arbitrary number of system sizes.
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+
+    ax.set_xlabel("system size")
+    ax.set_ylabel("crossover time")
+    ax.set_title("Crossover time as a function of system size scatter plot")
+    ax.plot(syzes, crossovers, 'bo')
+
+    fig.savefig("crossover_time as a function of system size.png")
+    return fig
+
+
+def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
     """
     Solves task 2d.
 
@@ -455,10 +510,28 @@ def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, scaled_t_max=1e5, seed=0):
      :param: seed, int where should the random generator start. Note that for non-deterministic runs you need to change this.
      :return: cross-over time plot for an arbitrary number of systems. Plotted with <z>L**2(1+1/L)/2 theoretical reference.
      """
+
     if isinstance(sizes, (int, float)):
         sizes = [sizes]
 
-    time_height_pair_list = []  # Will contain scaled_time, scaled_height, scaled_time2, scaled_height2, etc...
+    sizelist, crossovers = main_2d_measure(sizes, p, trials, seed)
+    sizelist_array = np.array(sizelist)
+    crossovers_array = np.array(crossovers)
+
+    polynomial_coefficients, full = poly.polynomial.polyfit(sizelist_array, crossovers_array, 2, full=True)
+
+    empirical_x = np.array(np.linspace(0, 100,  201))
+    empirical_y = poly.polynomial.polyval(empirical_x, polynomial_coefficients)
+    residuals = full[0]
+
+    fig = main_2d_plot(sizelist,  crossovers)
+    ax = fig.gca()
+    ax.plot(empirical_x, empirical_y,'r-')
+    legend2 = "polynomial with coefficients {} and least squares residual of {}".format(polynomial_coefficients, residuals)
+    ax.legend(['Empirical Data','Quadratic Fit'])
+
+    return fig, polynomial_coefficients,residuals
+
 
     for size in sizes:
         t_max = int(size * size * scaled_t_max)
@@ -466,8 +539,6 @@ def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, scaled_t_max=1e5, seed=0):
         scaled_times, scaled_heights = main_2c_measure(size, p, t_max, seed)
         time_height_pair_list.append(scaled_times)
         time_height_pair_list.append(scaled_heights)
-
-    return main_2c_plot(1, *time_height_pair_list)
 
 def main(size=4, p=0.0, t_max = 1e5, seed = 0):
     """
