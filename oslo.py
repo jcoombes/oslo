@@ -6,8 +6,9 @@ def main_2c
 
 """
 import numpy as np
-import collections
+import collections #We need a double ended queue for our tree-search implementation of relaxation() function.
 import matplotlib.pyplot as plt
+import datetime #we want to uniquely name figures.
 
 def drive(slopes):
     """
@@ -92,7 +93,7 @@ def relaxation(slopes, thresh, p):
     """
     if len(slopes) != len(thresh): raise IndexError
 
-    hitlist = collections.deque([0]) #list of indices on slope we would like to add.
+    hitlist = collections.deque([0]) #list of site indices on slope we would like to relax.
     s = 0
 
     while len(hitlist) > 0:
@@ -146,6 +147,43 @@ def relaxation_bifurcation(slopes, thresh, p):
                 #print(index, "<", len(slopes))
                 hitlist.append(index+1)
     return slopes, bifurcate
+
+def relaxation_crossover(slopes, thresh, p):
+    """
+    Relaxes everything that can relax.
+    I think instead of using a loop in a loop, you can save on unnecessary comparisons by representing
+    the as a binary tree. Then you can use tree traversal algorithms.
+
+    :param slopes: list of ints.
+    :param thresh: list of ints, either 1 or 2.
+    :return: slopes, but after all the slopes that can relax, have relaxed.
+    :return: cross, bool whether this relaxation caused the rightmost site to relax (did a grain to leave the system?)
+    """
+    if len(slopes) != len(thresh): raise IndexError
+
+    hitlist = collections.deque([0]) #list of site indices on slope we would like to relax.
+    s = 0
+
+    while len(hitlist) > 0:
+        index = hitlist.popleft()
+
+        #print(index, sep="\t ")
+        if slopes[index] > thresh[index]:
+            s += 1
+            #print(slopes)
+            #print("relaxing index {} because {} > {}".format(index, slopes[index], thresh[index]))
+            slopes, thresh = relax_and_thresh(index, slopes, thresh, p)
+
+            hitlist.appendleft(index)
+
+            if index > 0:
+                hitlist.appendleft(index-1)
+            if index < len(slopes)-1: #len(slopes) is one larger than the maximum index because zero-indexing.
+                #print(index, "<", len(slopes))
+                hitlist.append(index+1)
+            elif index == len(slopes)-1:
+                cross = True
+    return slopes, s, cross
 
 def relax_and_thresh_init(size = 4, p = 0.5, seed = 0):
     """
@@ -247,19 +285,10 @@ def moving_average(heights, window = 25):
         smooth.append(add_window(heights, site, window))
     return smooth
 
-def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname="Height(grains)"):
+def main_2a_measure(size, p, t_max, seed):
     """
-    Solves task 2a.
-    'Starting from an empty system, measure and plot the total height of the pile
-    as a function of time t for a range of system sizes.'
-
-    :param size: int, how big is system?
-    :param p: when p=1, all thresh is 1, when p =0, all thresh is 2.
-    :param t_max: cast into int, how many grains do we add?
-    :param seed: int, change this to generate different runs.
-    :param log: bool, generate linear plot or loglog plot?
-    :param save: bool, do you want to save the figure?
-    :return: heights, prints out average recurrent height also produces a plot.
+    Measures the total height of the pile starting from an empty system.
+    :return: heights
     """
     slopes, thresh = relax_and_thresh_init(size, p, seed)
     heights = []
@@ -269,6 +298,15 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname=
         slopes = relaxation(slopes, thresh, p)[0]
         heights.append(height(slopes))
 
+    return heights
+
+
+def main_2a_plot(heights, log, save, figname):
+    """
+    Plots the total height of the pile on either linear axes or loglog axes.
+
+    :return: a lovely plot, also prints the average height once the system reaches the recurrent configurations.
+    """
     recurrent_heights = heights[2000:]  # This is a rough way to cut transient and recurrent configurations.
     avg = sum(recurrent_heights)/ len(recurrent_heights)
     print("the average recurrent height of the system is " + str(avg))
@@ -287,16 +325,149 @@ def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname=
         plt.yscale("linear")
         if save:
             plt.savefig(figname)
-    return heights
+    return fig
+
+def main_2a(size = 32, p = 0.5, t_max = 1e5, seed = 0, log=0, save = 0, figname="Height(grains)"):
+    """
+    Solves task 2a.
+    'Starting from an empty system, measure and plot the total height of the pile
+    as a function of time t for a range of system sizes.'
+
+    :param size: int, how big is system?
+    :param p: when p=1, all thresh is 1, when p =0, all thresh is 2.
+    :param t_max: cast into int, how many grains do we add?
+    :param seed: int, change this to generate different runs.
+    :param log: bool, generate linear plot or loglog plot?
+    :param save: bool, do you want to save the figure?
+    """
+    heights = main_2a_measure(size, p, t_max, seed)
+    main_2a_plot(heights, log, save, figname)
 
 def main_2b():
     """
-    Theoretical
+    Theoretical -
+    show that for very large system sizes, <h>=<z>L where h is average pile height, z is mean slope, L is system size.
+    show that the mean crossover time (time required for grain topple through the whole system) is <t_c>=<z>L(L+1)/2
     """
     pass
 
-def main_2c():
-    raise NotImplementedError
+def main_2c_measure(size, p, t_max, seed):
+    """
+    This function will be very similar to 2a, except we have scaled the time and the height.
+    :return: scaled times, list of floats.
+    :return: scaled heights, list of floats. Hopefully these will be the same for multiple system sizes.
+    """
+    slopes, thresh = relax_and_thresh_init(size, p, seed)
+    size_sq = size*size
+    scaled_times = []
+    scaled_heights = []
+
+    for i in range(int(t_max)):
+        scaled_times.append(i/size_sq)
+        slopes = drive(slopes)
+        slopes = relaxation(slopes, thresh, p)[0]
+        scaled_heights.append(height(slopes)/size)
+
+
+    return scaled_times, scaled_heights
+
+def main_2c_plot(save, *args):
+    """
+    Plot our amazing data collapse, notice that because we have scaled the time axis we need to use a larger t_max
+    in the main_2c_measure() function so that t_max/(size**2) is the same for all system sizes.
+    :param: save, boolean, do you want to save this figure to current directory?
+    :param: scaled_times, list of ints. zeroth positional argument.
+    :param: scaled_heights, list of ints. first positional argument.
+    :param: scaled_times2, list of ints. second positional argument.
+    :param: scaled_heights2, list of ints. third positional argument.
+    :param: scaled_times3, list of ints. fourth positional argument.
+    :param: scaled_heights3, list of ints. fifth positional argument.
+    ... etc, this function will just keep plotting all the times, and all the heights you give it.
+
+    :return: a beautiful plot with an arbitrary number of systems in it.
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ax.set_xlabel("scaled time t/L^2")
+    ax.set_ylabel("scaled height h/L")
+    ax.set_title("Data collapse")
+
+    if len(args)%2 != 0:
+        raise(ValueError("Incorrect number of positional arguments"))
+
+    else:
+        for i in range(0, len(args), 2):
+            ax.plot(args[i], args[i+1])
+
+        if save:
+            file_identifier = str(datetime.datetime.now()).replace(".", "-").replace(" ","_").replace(":","_") #e.g. '2018-02-04__15:43:06-761532'
+            fig.savefig("Data_Collapse_" + file_identifier, format='png')
+        return fig
+
+def main_2c(sizes=[4, 8, 16, 32, 64, 128], p = 0.5, scaled_t_max = 1e5, seed=0):
+    """
+    Solves task 2c.
+
+    Guided by your answers to the two questions in 2b, produce a data collapse for the processed height h^tilde(t,L)
+    vs. time t for various system sizes. Explain carefully how you produced a data collapse
+    and express that mathematically, introducing a scaling function F: h^tilde(t, L) = something F(argument),
+    identifying 'something' and the 'argument'. How does the scaling function F(x) behave for large arguments x>>1
+    and for small arguments x<<1 and why must it be so? From this result, obtain/predict how h^tilde increases
+    as a function of t during the transient.
+
+    I think because the mean height scales linearly with system size,
+    and the average cross over time scales quadratically with system size,
+    this is just a matter of linearly scaling height, and quadratically scaling time for different L.
+    :param: sizes, list of system sizes to calculate and plot.
+    :param: p, probability threshhold slope height is 1 rather than 2.
+    :param: scaled_t_max, float t_max/(size^2). How many timesteps do you want the final data collapse to span.
+    :param: seed, int where should the random generator start. Note that for non-deterministic runs you need to change this.
+    :return: beautiful data collapse plot for an arbitrary number of systems.
+    """
+
+    if isinstance(sizes, (int, float)):
+        sizes = [sizes]
+
+    time_height_pair_list = [] #Will contain scaled_time, scaled_height, scaled_time2, scaled_height2, etc...
+
+    for size in sizes:
+        t_max = int(size * size * scaled_t_max)
+        print("Calculating for system size {} over {} timesteps".format(size, t_max))
+        scaled_times, scaled_heights = main_2c_measure(size, p, t_max, seed)
+        time_height_pair_list.append(scaled_times)
+        time_height_pair_list.append(scaled_heights)
+
+    return_fig = main_2c_plot(1, *time_height_pair_list)
+    return return_fig
+
+def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, scaled_t_max=1e5, seed=0):
+    """
+    Solves task 2d.
+
+    'Numerically measure the cross-over time, t_c(L) as the number of grains in the system before an added grain
+    induces a grain to leave the system for the first time, starting from an empty system
+    estimate the average cross-over time as <t_c(L)>. Demonstrate whether your data corroborate your theoretical prediction.
+
+     :param: sizes, list of system sizes to calculate and plot.
+     :param: p, probability threshhold slope height is 1 rather than 2.
+     :param: scaled_t_max, float t_max/(size^2). How many timesteps do you want the final data collapse to span.
+     :param: seed, int where should the random generator start. Note that for non-deterministic runs you need to change this.
+     :return: cross-over time plot for an arbitrary number of systems. Plotted with <z>L**2(1+1/L)/2 theoretical reference.
+     """
+    if isinstance(sizes, (int, float)):
+        sizes = [sizes]
+
+    time_height_pair_list = []  # Will contain scaled_time, scaled_height, scaled_time2, scaled_height2, etc...
+
+    for size in sizes:
+        t_max = int(size * size * scaled_t_max)
+        print("Calculating for system size {} over {} timesteps".format(size, t_max))
+        scaled_times, scaled_heights = main_2c_measure(size, p, t_max, seed)
+        time_height_pair_list.append(scaled_times)
+        time_height_pair_list.append(scaled_heights)
+
+    return main_2c_plot(1, *time_height_pair_list)
 
 def main(size=4, p=0.0, t_max = 1e5, seed = 0):
     """
