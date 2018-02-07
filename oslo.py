@@ -2,15 +2,24 @@
 A simple implementation of the Oslo model, built using test-driven development.
 
 TODO:
-main_2d gives strange coeffs,
-check main_2c uses moving_average() correctly by calling it.
+task1: build a test/check test is sufficiently testy.
+task2c: Scaling function, behaviour, how does h_tilde change with t during transient.
+main_2d gives strange coeffs for quadratic,
 take mean of crossover_times for a given system size. create a dict of system size, cutoff lookup values.
 measure height averaged over time.
+
+task2e: all of it.
+task2f: all of it.
+** task2g: make main_2g accept multiple system sizes in one plot. This is going to involve a figure object or an
+axes object being passed to main_2g_plot multiple times so it can keep painting more system lines on.
+
+Alternately, I could generate everthing and then call it.
 
 """
 import numpy as np
 import numpy.polynomial as poly #Used to fit a polynomial to crossover time graph.
 import collections #We need a double ended queue for our tree-search implementation of relaxation() function.
+import matplotlib
 import matplotlib.pyplot as plt
 import datetime #we want to uniquely name figures.
 
@@ -223,7 +232,7 @@ def main_bifurcation(size, p, t_max, seed):
     slopes, thresh = relax_and_thresh_init(size, p, seed)
 
     bif = 'replaceme'
-    for i in range(int(t_max)):
+    for t in range(int(t_max)):
         slopes = drive(slopes)
         slopes, bif = relaxation_bifurcation(slopes, thresh, p)
         print(bif)
@@ -290,15 +299,58 @@ def moving_average(heights, window = 25):
         smooth.append(add_window(heights, site, window))
     return smooth
 
+def time_average(arr, start_time):
+    """
+    returns the time average of an arbitrary function.
+    This takes an arbitrary function because I want to use this to make mean, and standard deviation function,
+    Maybe I could use this for higher order moments as well.
+
+    e.g. when arr=h,
+    <h(t, L)>_t = lim T -> inf, 1/T * sum_t0^t0+T(h(t, L))
+
+
+
+    :param arr: numpy array, what do you want to approximate the time average of?
+    :param start_time: int or float,
+    :return mean: int, the function averaged with time.
+    """
+    steady_state_arr = arr[start_time:] #T implicitly defined here, as t_max(the length of arr) minus t_init.
+    return steady_state_arr.sum()/steady_state_arr.size
+
+def standard_deviation(arr, start_time):
+    """
+
+    :param arr: what would you like to find the standard_deviation of?
+    :param start_time: int, which timestep do you want to begin averaging from?
+    :return standard_dev: float, the standard deviation.
+    """
+    arr_squared = arr*arr
+    var = time_average(arr_squared, start_time) - time_average(arr)**2
+    standard_dev = np.sqrt(var)
+    return standard_dev
+
+def height_probability(heights):
+    """
+    This should include the transient and the recurrent configurations.
+
+    :param heights:
+    :return prob[heights]: array of floats between 0 and 1, fraction of available configurations with a height h.
+    """
+    unique, counts = np.unique(heights, return_counts=True)
+
+    raise NotImplementedError
+    assert 1.0 >= prob.all() >= 0.0
+    return prob
+
 def main_2a_measure(size, p, t_max, seed):
     """
     Measures the total height of the pile starting from an empty system.
-    :return: heights
+    :return: heights at every timestep
     """
     slopes, thresh = relax_and_thresh_init(size, p, seed)
     heights = []
 
-    for i in range(int(t_max)):
+    for t in range(int(t_max)):
         slopes = drive(slopes)
         slopes = relaxation(slopes, thresh, p)[0]
         heights.append(height(slopes))
@@ -367,8 +419,8 @@ def main_2c_measure(size, p, t_max, seed):
     scaled_times = []
     scaled_heights = []
 
-    for i in range(int(t_max)):
-        scaled_times.append(i/size_sq)
+    for t in range(int(t_max)):
+        scaled_times.append(t/size_sq)
         slopes = drive(slopes)
         slopes = relaxation(slopes, thresh, p)[0]
         scaled_heights.append(height(slopes)/size)
@@ -404,6 +456,7 @@ def main_2c_plot(save, *args):
     else:
         for i in range(0, len(args), 2):
             ax.plot(args[i], args[i+1])
+            ax.legend()
 
         if save:
             file_identifier = str(datetime.datetime.now()).replace(".", "-").replace(" ","_").replace(":","_") #e.g. '2018-02-04__15:43:06-761532'
@@ -528,48 +581,99 @@ def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
     ax = fig.gca()
     ax.plot(empirical_x, empirical_y,'r-')
     legend2 = "polynomial with coefficients {} and least squares residual of {}".format(polynomial_coefficients, residuals)
-    ax.legend(['Empirical Data','Quadratic Fit'])
 
     return fig, polynomial_coefficients,residuals
 
-
-    for size in sizes:
-        t_max = int(size * size * scaled_t_max)
-        print("Calculating for system size {} over {} timesteps".format(size, t_max))
-        scaled_times, scaled_heights = main_2c_measure(size, p, t_max, seed)
-        time_height_pair_list.append(scaled_times)
-        time_height_pair_list.append(scaled_heights)
-
-def main(size=4, p=0.0, t_max = 1e5, seed = 0):
-    """
-    DEPRECATED.
-
-    :param size: system size, the number of sites in the 1 dimensional lattice.
-    :param p: probability(thresh[i]==1), 0 <= p <= 1
-    :return: nothing?
+def main_2e_measure(size, start_time, p, t_max, seed):
     """
 
-    slopes, thresh = relax_and_thresh_init(size, p, seed)
+    :return: time average plot.
+    """
 
-    ava = []
-    heights = []
-    scaled_height = []
-    scaled_time = []
-    size_sq = size * size
+    heights = np.array(main_2a_measure(size, p, int(t_max), seed)) #heights[i] is the height at timestep i
+    t_av = time_average(heights, start_time)
+    return t_av
 
-    for i in range(int(t_max)):
-        drive(slopes)
-        ava.append(relaxation(slopes, thresh, p)[1])
-        h = sum(slopes)
-        heights.append(h)
-        scaled_height.append(h/size)
-        scaled_time.append(i/(size_sq))
 
-    print(sum(heights[2000:])/ len(heights[2000:]))
+def main_2e_plot():
+    raise NotImplementedError
 
-    return plt.plot(heights)
-    #return plt.plot(scaled_time,scaled_height)
-    #return plt.hist(heights, log=True)
+def main_2e(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
+    """
+    Solves task 2e.
+
+    'Now we consider the numerical data for the average height <h(t, L)> to investigate whether it contains signs of
+    corrections to scaling. Assume the following form of the corrections to scaling
+    <h(t, L)> = a_0L(1 - a_1 L^{-w1} + a_2 L^{-w2} + ...)
+    where w1 >0, w2 > 0, and a_i are constants. Neglecting terms with i>1, estimate a0 and w1 using your measured data.'
+
+    :return: fig - some kind of graph.
+    :return: estimates, tuple containing floats, (a0, w)
+    """
+    raise NotImplementedError
+    h_av_t = main_2e_measure(t, L, T)
+    fig = main_2e_plot()
+
+    estimates = (0,0)
+
+    return fig, estimates
+
+def main_2g_measure(size, p, t_max, seed):
+    """
+
+    :param size: see main_measure_2a
+    :param p: see main_measure_2a
+    :param t_max: see main_measure_2a
+    :param seed: see main_measure_2a
+    :return sorted_unique_heights: array, sorted with duplicate elements removed.
+    :return prob: array normalised.
+
+    expected usage example: plt.plot(main_2g_measure)
+    """
+    heights = main_2a_measure(size, p, t_max, seed)
+    sorted_unique_heights, counts = np.unique(heights, return_counts=True)
+    prob = counts/counts.sum()
+    return sorted_unique_heights, prob
+
+def main_2g_plot(heights, prob, size, ax=None):
+    """
+
+    :param heights:
+    :param prob:
+    :param size:
+    :param ax: bool,
+    :return:
+    """
+    fig = plt.figure()
+    if not ax:
+        ax = fig.gca()
+    else:
+        ax = ax
+
+    ax.plot(heights, prob)
+    ax.set_xlabel("Height")
+    ax.set_ylabel("Relative Probability")
+    ax.legend(["System Size: {}".format(size)])
+
+    return fig
+
+
+def main_2g(size, p, t_max, seed):
+    """
+    This is going to produce a lovely plot of relative likeliness of
+    a configuration having a given height.
+
+    :param size:
+    :param p:
+    :param t_max:
+    :param seed:
+    :return:
+    """
+    heights, count = main_2g_measure(size, p, t_max, seed)
+    fig = main_2g_plot(heights, count, size, ax)
+
+    return fig
+
 
 
 if __name__ == "__main__":
