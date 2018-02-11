@@ -8,16 +8,16 @@ main_2d gives strange coeffs for quadratic,
 take mean of crossover_times for a given system size. create a dict of system size, cutoff lookup values.
 measure height averaged over time.
 
-task2e: all of it.
+2d: why are the plots only measuring one point for a given system size?
+2d: can I try changing quadratic_with_no_constant to ax**2 + ax?
+
+task2e: all of it. Have built time_average function.
 task2f: all of it.
-** task2g: make main_2g accept multiple system sizes in one plot. This is going to involve a figure object or an
-axes object being passed to main_2g_plot multiple times so it can keep painting more system lines on.
-
-Alternately, I could generate everthing and then call it.
-
+task2g: theoretical > data collapse > Experiment matches theory?
 """
 import numpy as np
 import numpy.polynomial as poly #Used to fit a polynomial to crossover time graph.
+import scipy.optimize as opt #Also used to fit polynomial to crossover time graph.
 import collections #We need a double ended queue for our tree-search implementation of relaxation() function.
 import matplotlib
 import matplotlib.pyplot as plt
@@ -301,14 +301,12 @@ def moving_average(heights, window = 25):
 
 def time_average(arr, start_time):
     """
-    returns the time average of an arbitrary function.
-    This takes an arbitrary function because I want to use this to make mean, and standard deviation function,
+    returns the time average of an arbitrary array.
+    This takes an arbitrary array because I want to use this to make mean, and standard deviation function,
     Maybe I could use this for higher order moments as well.
 
     e.g. when arr=h,
     <h(t, L)>_t = lim T -> inf, 1/T * sum_t0^t0+T(h(t, L))
-
-
 
     :param arr: numpy array, what do you want to approximate the time average of?
     :param start_time: int or float,
@@ -329,19 +327,6 @@ def standard_deviation(arr, start_time):
     standard_dev = np.sqrt(var)
     return standard_dev
 
-def height_probability(heights):
-    """
-    This should include the transient and the recurrent configurations.
-
-    :param heights:
-    :return prob[heights]: array of floats between 0 and 1, fraction of available configurations with a height h.
-    """
-    unique, counts = np.unique(heights, return_counts=True)
-
-    raise NotImplementedError
-    assert 1.0 >= prob.all() >= 0.0
-    return prob
-
 def main_2a_measure(size, p, t_max, seed):
     """
     Measures the total height of the pile starting from an empty system.
@@ -356,7 +341,6 @@ def main_2a_measure(size, p, t_max, seed):
         heights.append(height(slopes))
 
     return heights
-
 
 def main_2a_plot(heights, log, save, figname):
     """
@@ -506,7 +490,7 @@ def main_2d_measure(sizes, p, trials, seed):
     :param syzes: list of ints, which system sizes would you like to plot?
     :param p: input parameter to oslo model.
     :param trials: how many t_c data points do you want for each system size.
-    :return: syze, list of in/ts, what is the system size under test.
+    :return: syze, list of ints, what is the system size under test.
     :return: crossovers, list of crossover times.
     """
     syzes =  []
@@ -528,7 +512,6 @@ def main_2d_measure(sizes, p, trials, seed):
 
     return syzes, crossovers
 
-
 def main_2d_plot(syzes, crossovers):
     """
     Plots the mean cross-over time for a range of system sizes.
@@ -543,13 +526,12 @@ def main_2d_plot(syzes, crossovers):
     ax.set_xlabel("system size")
     ax.set_ylabel("crossover time")
     ax.set_title("Crossover time as a function of system size scatter plot")
-    ax.plot(syzes, crossovers, 'bo')
+    ax.plot(syzes, crossovers, 'b+')
 
     fig.savefig("crossover_time as a function of system size.png")
     return fig
 
-
-def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
+def main_2d(sizes=[4, 8, 16, 32, 64, 128, 256], p=0.5, trials = 3, seed=0):
     """
     Solves task 2d.
 
@@ -559,7 +541,7 @@ def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
 
      :param: sizes, list of system sizes to calculate and plot.
      :param: p, probability threshhold slope height is 1 rather than 2.
-     :param: scaled_t_max, float t_max/(size^2). How many timesteps do you want the final data collapse to span.
+     :param: trials, int how many data points would you like for each system size?
      :param: seed, int where should the random generator start. Note that for non-deterministic runs you need to change this.
      :return: cross-over time plot for an arbitrary number of systems. Plotted with <z>L**2(1+1/L)/2 theoretical reference.
      """
@@ -573,7 +555,7 @@ def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
 
     polynomial_coefficients, full = poly.polynomial.polyfit(sizelist_array, crossovers_array, 2, full=True)
 
-    empirical_x = np.array(np.linspace(0, 100,  201))
+    empirical_x = np.array(np.linspace(0, 260,  261))
     empirical_y = poly.polynomial.polyval(empirical_x, polynomial_coefficients)
     residuals = full[0]
 
@@ -584,6 +566,47 @@ def main_2d(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
 
     return fig, polynomial_coefficients,residuals
 
+def main_2d_ode(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
+    """
+    Solves task 2d.
+
+    'Numerically measure the cross-over time, t_c(L) as the number of grains in the system before an added grain
+    induces a grain to leave the system for the first time, starting from an empty system
+    estimate the average cross-over time as <t_c(L)>. Demonstrate whether your data corroborate your theoretical prediction.
+
+     :param: sizes, list of system sizes to calculate and plot.
+     :param: p, probability threshhold slope height is 1 rather than 2.
+     :param: trials, int how many data points would you like for each system size
+     :param: seed, int where should the random generator start. Note that for non-deterministic runs you need to change this.
+     :return: cross-over time plot for an arbitrary number of systems. Plotted with <z>L**2(1+1/L)/2 theoretical reference.
+     """
+
+    if isinstance(sizes, (int, float)):
+        sizes = [sizes]
+
+    sizelist, crossovers = main_2d_measure(sizes, p, trials, seed)
+    sizelist_array = np.array(sizelist) #e.g. [8, 8, 8, 16, 16, 16]. Think of this as x-coords for your graph.
+    crossovers_array = np.array(crossovers)
+
+    def quadratic_with_no_contant(x, a, b):
+        return a*x**2 + b*x
+
+    coefficients, covariance = opt.curve_fit(quadratic_with_no_contant, sizelist_array, crossovers_array)
+
+    #polynomial_coefficients, full = poly.polynomial.polyfit(sizelist_array, crossovers_array, 2, full=True)
+
+    empirical_x = np.array(np.linspace(0, 260,  261))
+    empirical_y = quadratic_with_no_contant(empirical_x, *coefficients)
+    #residuals = full[0]
+
+    fig = main_2d_plot(sizelist,  crossovers)
+    ax = fig.gca()
+    ax.plot(empirical_x, empirical_y,'r-')
+    legend2 = "polynomial with coefficients {} and least squares residual of {}".format(coefficients, covariance)
+
+    return fig, coefficients, covariance
+
+
 def main_2e_measure(size, start_time, p, t_max, seed):
     """
 
@@ -593,7 +616,6 @@ def main_2e_measure(size, start_time, p, t_max, seed):
     heights = np.array(main_2a_measure(size, p, int(t_max), seed)) #heights[i] is the height at timestep i
     t_av = time_average(heights, start_time)
     return t_av
-
 
 def main_2e_plot():
     raise NotImplementedError
@@ -620,45 +642,50 @@ def main_2e(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
 
 def main_2g_measure(size, p, t_max, seed):
     """
+    Measure the height distribution.
+    This include the transient and the recurrent configurations.
 
     :param size: see main_measure_2a
     :param p: see main_measure_2a
     :param t_max: see main_measure_2a
     :param seed: see main_measure_2a
     :return sorted_unique_heights: array, sorted with duplicate elements removed.
-    :return prob: array normalised.
+    :return prob[heights]: normalised array of floats. Fraction of available configurations with height h
 
     expected usage example: plt.plot(main_2g_measure)
     """
+
     heights = main_2a_measure(size, p, t_max, seed)
     sorted_unique_heights, counts = np.unique(heights, return_counts=True)
     prob = counts/counts.sum()
     return sorted_unique_heights, prob
 
-def main_2g_plot(heights, prob, size, ax=None):
+def main_2g_plot(heights, prob, size, fig = None, ax=None):
     """
+    main_2c_plot took a functional approach with an arbitrary number of x, y pairs as inputs.
+    This function tries to use matplotlib's object oriented API rather than pyplot.
+    If called with figure=None, ax =None it will create a figure and an axis to
 
     :param heights:
     :param prob:
     :param size:
+    :param figure: bool, would you like to print to a particular figure?
     :param ax: bool,
     :return:
     """
-    fig = plt.figure()
-    if not ax:
-        ax = fig.gca()
-    else:
-        ax = ax
+    if not fig and not ax:
+        fig, ax = plt.subplots(1, 1)
 
-    ax.plot(heights, prob)
+    ax.plot(heights, prob, label='System Size: {}'.format(size))
     ax.set_xlabel("Height")
     ax.set_ylabel("Relative Probability")
-    ax.legend(["System Size: {}".format(size)])
+    ax.set_title("Probability the system has a given height.")
+    ax.legend()
 
-    return fig
+    return fig, ax
 
 
-def main_2g(size, p, t_max, seed):
+def main_2g(sizes, p, t_max, seed):
     """
     This is going to produce a lovely plot of relative likeliness of
     a configuration having a given height.
@@ -669,8 +696,12 @@ def main_2g(size, p, t_max, seed):
     :param seed:
     :return:
     """
-    heights, count = main_2g_measure(size, p, t_max, seed)
-    fig = main_2g_plot(heights, count, size, ax)
+    fig = None
+    ax = None
+
+    for size in sizes:
+        heights, count = main_2g_measure(size, p, t_max, seed)
+        fig, ax = main_2g_plot(heights, count, size, fig, ax)
 
     return fig
 
