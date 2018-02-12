@@ -7,11 +7,12 @@ task2c: Scaling function, behaviour, how does h_tilde change with t during trans
 main_2d gives strange coeffs for quadratic,
 take mean of crossover_times for a given system size. create a dict of system size, cutoff lookup values.
 measure height averaged over time.
+2d: does this match with average heights from main_2a/system size?
 
-2d: why are the plots only measuring one point for a given system size?
-2d: can I try changing quadratic_with_no_constant to ax**2 + ax?
+task2e: We have a gorgeous linear fit. This is a first approximation for a0
+Can we use a more sophisticated fitting function to find w1, a1, a0?
+Change the corrections to scaling graph to make the line labels more useful, how about the number of timesteps averaged over t_max-start_time?
 
-task2e: all of it. Have built time_average function.
 task2f: all of it.
 task2g: theoretical > data collapse > Experiment matches theory?
 """
@@ -499,7 +500,7 @@ def main_2d_measure(sizes, p, trials, seed):
 
     for size in sizes:
         for j in range(trials):
-            slopes, thresh = relax_and_thresh_init(size, p, seed)
+            slopes, thresh = relax_and_thresh_init(size, p, seed+j)
             crossed = False
             tc = 0
 
@@ -589,10 +590,10 @@ def main_2d_ode(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
     sizelist_array = np.array(sizelist) #e.g. [8, 8, 8, 16, 16, 16]. Think of this as x-coords for your graph.
     crossovers_array = np.array(crossovers)
 
-    def quadratic_with_no_contant(x, a, b):
-        return a*x**2 + b*x
+    def quadratic_with_no_contant(x, a):
+        return a*x**2 + a*x
 
-    coefficients, covariance = opt.curve_fit(quadratic_with_no_contant, sizelist_array, crossovers_array)
+    coefficients, covariance = opt.curve_fit(quadratic_with_no_contant, sizelist_array, crossovers_array, p0=(0.86))
 
     #polynomial_coefficients, full = poly.polynomial.polyfit(sizelist_array, crossovers_array, 2, full=True)
 
