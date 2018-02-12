@@ -19,8 +19,9 @@ import numpy as np
 import numpy.polynomial as poly #Used to fit a polynomial to crossover time graph.
 import scipy.optimize as opt #Also used to fit polynomial to crossover time graph.
 import collections #We need a double ended queue for our tree-search implementation of relaxation() function.
-import matplotlib
 import matplotlib.pyplot as plt
+import seaborn as sns #makes pretty figures
+sns.set()
 import datetime #we want to uniquely name figures.
 
 def drive(slopes):
@@ -447,7 +448,7 @@ def main_2c_plot(save, *args):
             fig.savefig("Data_Collapse_" + file_identifier +'.png', format='png')
         return fig
 
-def main_2c(sizes=[4, 8, 16, 32, 64, 128], p = 0.5, scaled_t_max = 1e5, seed=0):
+def main_2c(sizes=[4, 8, 16, 32, 64, 128], p = 0.5, scaled_t_max = 1e4,seed=0):
     """
     Solves task 2c.
 
@@ -617,8 +618,29 @@ def main_2e_measure(size, start_time, p, t_max, seed):
     t_av = time_average(heights, start_time)
     return t_av
 
-def main_2e_plot():
-    raise NotImplementedError
+def main_2e_plot(size, h_av_t, fig = None, ax=None):
+    """
+    main_2c_plot took a functional approach with an arbitrary number of x, y pairs as inputs.
+    This function tries to use matplotlib's object oriented API rather than pyplot.
+    If called with figure=None, ax =None it will create a figure and an axis to
+
+    :param h_av_t: heights averaged in time. height[i] corresponds to the (start_time + i)th timestep.
+    :param prob:
+    :param size:
+    :param figure: bool, would you like to print to a particular figure?
+    :param ax: bool,
+    :return:
+    """
+    if not fig and not ax:
+        fig, ax = plt.subplots(1, 1)
+
+    ax.scatter(size, h_av_t, label='System Size: {}'.format(size))
+    ax.set_xlabel("System Size")
+    ax.set_ylabel("Time-average height of recurrent configurations")
+    ax.set_title("Corrections to scaling.")
+    ax.legend()
+
+    return fig, ax
 
 def main_2e(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
     """
@@ -632,13 +654,39 @@ def main_2e(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
     :return: fig - some kind of graph.
     :return: estimates, tuple containing floats, (a0, w)
     """
-    raise NotImplementedError
-    h_av_t = main_2e_measure(t, L, T)
-    fig = main_2e_plot()
+    fig = None
+    ax = None
+    t_max = 20000
+    start_time = 15000
+    sizelist = []
+    h_av_tlist = []
+    
+    for size in sizes:
+        for trial in range(trials):
+            h_av_t = main_2e_measure(size, start_time, p, t_max, seed+trial)
+            fig, ax = main_2e_plot(size, h_av_t, fig, ax)
+            
+            sizelist.append(size)
+            h_av_tlist.append(h_av_t)
+            
+    
+    sizelist_array = np.array(sizelist)
+    h_av_tlist_array = np.array(h_av_tlist)
+    
+    def fit_func(l, a0):
+        return a0*l
 
-    estimates = (0,0)
+    coefficients, covariance = opt.curve_fit(fit_func, sizelist_array, h_av_tlist_array)
 
-    return fig, estimates
+    #polynomial_coefficients, full = poly.polynomial.polyfit(sizelist_array, crossovers_array, 2, full=True)
+
+    empirical_x = np.array(np.linspace(0, 130,  131))
+    empirical_y = fit_func(empirical_x, *coefficients)
+    #residuals = full[0]
+
+    ax.plot(empirical_x, empirical_y,'r-')
+    
+    return fig, coefficients
 
 def main_2g_measure(size, p, t_max, seed):
     """
