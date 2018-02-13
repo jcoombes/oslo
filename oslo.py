@@ -2,6 +2,9 @@
 A simple implementation of the Oslo model, built using test-driven development.
 
 TODO:
+
+IS THERE A SYSTEMIC PROBLEM IN MY MAIN_2A_MEASURE FUNCTION BECAUSE IT DOESN'T CHANGE THRESH AFTER RELAXATION?
+
 task1: build a test/check test is sufficiently testy.
 task2c: Scaling function, behaviour, how does h_tilde change with t during transient.
 main_2d gives strange coeffs for quadratic,
@@ -23,7 +26,9 @@ import collections #We need a double ended queue for our tree-search implementat
 import matplotlib.pyplot as plt
 import seaborn as sns #makes pretty figures
 sns.set()
-import datetime #we want to uniquely name figures.
+import datetime #we want to uniquely name figures. I could use GUID, but I prefer this method.
+import pickle
+
 
 def drive(slopes):
     """
@@ -301,6 +306,13 @@ def moving_average(heights, window = 25):
         smooth.append(add_window(heights, site, window))
     return smooth
 
+def cross_estimate(size):
+    """
+    This should give an overestimate of crossover time, which leaves a little margin to start collecting data.
+    :return: approximate value of the crossover time.
+    """
+    return 0.85 * size * (size+1)
+
 def time_average(arr, start_time):
     """
     returns the time average of an arbitrary array.
@@ -328,6 +340,41 @@ def standard_deviation(arr, start_time):
     var = time_average(arr_squared, start_time) - time_average(arr)**2
     standard_dev = np.sqrt(var)
     return standard_dev
+
+def picklification(size, p, t_max, seed, heights, slopes, thresh, filename='heights'):
+    """
+
+    :param seed: int
+    :param size: int
+    :param t_max: int
+    :param heights: array[floats]
+    :return: pickle string.
+    """
+    with open('pickle/'+str(filename)+'.pickle','wb') as f:
+        picklestring = pickle.dumps({"seed":seed, "p": p, "size": size,"t_max":t_max, "heights": heights, "slopes": slopes, "thresh":thresh})
+        f.write(picklestring)
+    return 'files written to pickle/{}.pickle (hopefully.)'.format(filename)
+
+def depicklification(filename):
+    with open('pickle/'+str(filename)+'.pickle', 'rb') as f:
+        run_bytes = f.read()
+        run_dict = pickle.loads(run_bytes)
+    return run_dict
+
+def heights_measure(size, p, t_max, seed):
+    """
+    Measures the total height of the pile starting from an empty system.
+    :return: heights at every timestep
+    """
+    slopes, thresh = relax_and_thresh_init(size, p, seed)
+    heights = []
+
+    for t in range(int(t_max)):
+        slopes = drive(slopes)
+        slopes = relaxation(slopes, thresh, p)[0]
+        heights.append(height(slopes))
+
+    return heights, slopes, thresh
 
 def main_2a_measure(size, p, t_max, seed):
     """
@@ -657,12 +704,12 @@ def main_2e(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials = 3, seed=0):
     """
     fig = None
     ax = None
-    t_max = 20000
-    start_time = 15000
     sizelist = []
     h_av_tlist = []
     
     for size in sizes:
+        start_time = cross_estimate(size)
+        t_max = start_time + 10000
         for trial in range(trials):
             h_av_t = main_2e_measure(size, start_time, p, t_max, seed+trial)
             fig, ax = main_2e_plot(size, h_av_t, fig, ax)
@@ -755,6 +802,8 @@ def main_2g(sizes, p, t_max, seed):
     return fig
 
 
+def main_3a():
+    raise NotImplementedError
 
 if __name__ == "__main__":
     main(4, 0.5)
