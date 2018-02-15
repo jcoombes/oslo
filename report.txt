@@ -1,0 +1,23 @@
+
+Self-Organised Criticality: Oslo Model.
+
+Abstract:
+Two parallel lines of investigation of the Oslo ricepile model are presented. The first models the average height; the second models the avalanche probability and higher moments.
+
+The avalanche height is found to be ..., and theoretical models are constructed to find the crossover time. A scaling function F is found for processed height. The cross-over time is calculated for different systems and found to scale as ..., the time average height, standard deviation of the height and height probability are also modelled and results of ..., ... and ... are obtained.
+
+The Oslo ricepile model was first developed in 1996 [Christensen 1996] following a month long experiments taking place in this city. This model shows a one-dimensional lattice being slowly driven in a non-equilibrium system.
+
+*Explain in words what the model is, and what the parameters mean. Use his book for inspiration.
+
+Model simulation and implementation.
+
+The model is implemented in Python. The simulation is run and the result serialized into pickle files. The pickle files are loaded and the contained data are analysed. This separation between model simulation and analysis allows for batch processing of simulations. 
+
+Relaxation is the most computationally complex part of the simulation. The relaxation is modelled as a galton-watson process using ternary decision tree. When a site relaxes, either the left neighbour, the site itself or the right neighbour will relax again.
+
+Consequently, the worst case algorithmic complexity of this process is 3 times the avalanche size, a linear relation. This is an improvement over the naive quadratic approach taken using nested loops.
+
+Appendix 1: Oslo Model Rules.
+
+Full codebase available at [github link].
