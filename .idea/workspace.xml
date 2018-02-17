@@ -19,7 +19,7 @@
           <file leaf-file-name="scratch.py" pinned="false" current-in-tab="false">
             <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="42">
+                <state relative-caret-position="0">
                   <caret line="2" column="4" lean-forward="false" selection-start-line="2" selection-start-column="4" selection-end-line="2" selection-end-column="4" />
                   <folding />
                 </state>
@@ -86,9 +86,11 @@
           <file leaf-file-name="oslotwo.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/oslotwo.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="369">
-                  <caret line="362" column="79" lean-forward="false" selection-start-line="362" selection-start-column="79" selection-end-line="362" selection-end-column="79" />
-                  <folding />
+                <state relative-caret-position="416">
+                  <caret line="443" column="82" lean-forward="false" selection-start-line="443" selection-start-column="82" selection-end-line="443" selection-end-column="82" />
+                  <folding>
+                    <element signature="e#753#778#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -100,9 +102,11 @@
           <file leaf-file-name="oslotwo.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/oslotwo.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="399">
-                  <caret line="869" column="37" lean-forward="false" selection-start-line="869" selection-start-column="37" selection-end-line="869" selection-end-column="37" />
-                  <folding />
+                <state relative-caret-position="21">
+                  <caret line="487" column="19" lean-forward="true" selection-start-line="487" selection-start-column="19" selection-end-line="487" selection-end-column="19" />
+                  <folding>
+                    <element signature="e#753#778#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -121,11 +125,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>i in</find>
-      <find>leg</find>
-      <find>matplo</find>
-      <find>steady</find>
-      <find>main_2a_measure</find>
       <find>cross_estimate</find>
       <find>2c</find>
       <find>2a</find>
@@ -146,11 +145,16 @@
       <find>time_</find>
       <find>time_av</find>
       <find>main_2a</find>
-      <find>main_2e</find>
       <find>time_average</find>
       <find>stan</find>
       <find>super</find>
       <find>stand</find>
+      <find>fiddling</find>
+      <find>main_2e</find>
+      <find>2f</find>
+      <find>:2]</find>
+      <find>relaxation_cross</find>
+      <find>avalanche</find>
     </findStrings>
     <replaceStrings>
       <replace>site</replace>
@@ -199,7 +203,7 @@
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$2/Languages" value="Python" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/oslotwo.py" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/logbin6-2-2018.py" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -270,6 +274,14 @@
       <option name="presentableId" value="Default" />
       <updated>1516279984917</updated>
     </task>
+    <task id="LOCAL-00001" summary="2e works fully now. 2f implemented.">
+      <created>1518893910442</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1518893910442</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -281,7 +293,7 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.24780701" sideWeight="0.080729164" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32705098" sideWeight="0.49583334" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.23026316" sideWeight="0.9192708" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16228071" sideWeight="0.9192708" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39978448" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -299,6 +311,10 @@
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="2e works fully now. 2f implemented." />
+    <option name="LAST_COMMIT_MESSAGE" value="2e works fully now. 2f implemented." />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <option name="time" value="8" />
@@ -306,19 +322,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/test_suite.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2205">
-          <caret line="157" column="38" lean-forward="false" selection-start-line="157" selection-start-column="38" selection-end-line="157" selection-end-column="39" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-            <element signature="e#156#662#0" expanded="false" />
-            <element signature="e#2429#3818#0" expanded="false" />
-            <element signature="e#3872#4308#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/oslo.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2415">
@@ -363,7 +366,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#753#778#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -432,7 +437,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#753#778#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1246,7 +1253,7 @@
     </entry>
     <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="42">
+        <state relative-caret-position="0">
           <caret line="2" column="4" lean-forward="false" selection-start-line="2" selection-start-column="4" selection-end-line="2" selection-end-column="4" />
           <folding />
         </state>
@@ -1293,11 +1300,21 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/logbin6-2-2018.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/oslotwo.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="869" column="37" lean-forward="false" selection-start-line="869" selection-start-column="37" selection-end-line="869" selection-end-column="37" />
-          <folding />
+        <state relative-caret-position="21">
+          <caret line="487" column="19" lean-forward="true" selection-start-line="487" selection-start-column="19" selection-end-line="487" selection-end-column="19" />
+          <folding>
+            <element signature="e#753#778#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

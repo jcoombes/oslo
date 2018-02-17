@@ -11,20 +11,20 @@ measure height averaged over time.
 2d: does this match with average heights from main_2a/system size?
 
 task2e: hooray, works. Can we do linear regression on our supermain2(main_2e, scaling=1) plot?
-task2f: all of it.
+task2f: ask blaine how to reverse engineer r^2 values to fit linear regression. do <z>_t and sigma_z(t)
 task2g: theoretical > data collapse > Experiment matches theory?
 """
+import logbinsixfeb as lb
 import numpy as np
 import numpy.polynomial as poly  # Used to fit a polynomial to crossover time graph.
 import scipy.optimize as opt  # Also used to fit polynomial to crossover time graph.
 import collections  # We need a double ended queue for our tree-search implementation of relaxation() function.
 import matplotlib.pyplot as plt
 import seaborn as sns  # makes pretty figures
-
-sns.set()
 import datetime  # we want to uniquely name figures. I could use GUID, but I prefer this method.
 import pickle
-import scipy.stats
+import scipy.stats #linear regression with pvalue, rvalue.
+sns.set()
 
 def drive(slopes):
     """
@@ -104,6 +104,7 @@ def relax_and_thresh(site, slopes, thresh, p):
 def relaxation(slopes, thresh, p):
     """
     Relaxes everything that can relax.
+    Even though thresh isn't explicitly returned, it it updated as a *side-effect of mutable lists*.
     I think instead of using a loop in a loop, you can save on unnecessary comparisons by representing
     the as a binary tree. Then you can use tree traversal algorithms.
 
@@ -177,7 +178,7 @@ def relaxation_crossover(slopes, thresh, p):
     the as a binary tree. Then you can use tree traversal algorithms.
 
     :param slopes: list of ints.
-    :param thresh: list of ints, either 1 or 2.
+    :param thresh: list of ints, either 1 or 2. #updated as a side effect.
     :return: slopes, but after all the slopes that can relax, have relaxed.
     :return: cross, bool whether this relaxation caused the rightmost site to relax (did a grain to leave the system?)
     """
@@ -388,6 +389,7 @@ def depicklification(filename):
     return run_dict
 
 def heights_measure(size, p, t_max, seed):
+
     """
     Measures the total height of the pile starting from an empty system.
     :return: heights at every timestep
@@ -395,7 +397,7 @@ def heights_measure(size, p, t_max, seed):
     slopes, thresh = relax_and_thresh_init(size, p, seed)
     heights = []
 
-    for t in range(int(t_max)):
+    for t in np.arange(t_max, dtype=np.int64):
         slopes = drive(slopes)
         slopes = relaxation(slopes, thresh, p)[0]
         heights.append(height(slopes))
@@ -420,6 +422,31 @@ def pickle_cross(size, p, trials, seed, cross, filename='cross'):
             )
         f.write(picklestring)
     return 'files written to pickle/cross/{}.pickle'.format(filename)
+
+
+def pickle_ava(size, p, tmax, seed, avalanches, slopes, thresh, cross, filename='ava'):
+    """
+
+    :param size:
+    :param p:
+    :param tmax:
+    :param seed:
+    :param avalanches:
+    :param slopes:
+    :param thresh:
+    :param cross:
+    :param filename:
+    :return:
+    """
+
+    with open('pickle/ava/' + str(filename) + '.pickle', 'wb') as f:
+        picklestring = pickle.dumps(
+            {"size" : size, "p" : p, "tmax" : tmax, "seed" : seed, "cross": cross, \
+             "avalanches" : avalanches, 'slopes' : slopes, 'thresh':thresh}
+            )
+        f.write(picklestring)
+    return 'files written to pickle/ava/{}.pickle'.format(filename)
+
 
 def cross_measure(sizes, p, trials, seed):
     """
@@ -450,7 +477,30 @@ def cross_measure(sizes, p, trials, seed):
 
     return return_sizes, crossovers
 
+def avalanche_measure(size, p, t_max, seed):
+    """
+    Measures the avalanche size at every timestep.
 
+    :param size:
+    :param p:
+    :param t_max:
+    :param seed:
+    :return: avalanches, slopes, thresh, crossover_time
+    """
+
+    slopes, thresh = relax_and_thresh_init(size, p, seed)
+    avalanches = []
+    already_crossed = False
+
+    for t in np.arange(t_max, dtype=np.int64):
+        slopes = drive(slopes)
+        slopes, s, cross = relaxation_crossover(slopes, thresh, p)
+        if not already_crossed and cross:
+            crossover_time = t
+            already_crossed = True
+        avalanches.append(s)
+
+    return avalanches, slopes, thresh, crossover_time
 
 def main_2a_measure(size, p, t_max, seed):
     """
@@ -508,10 +558,12 @@ def main_2a(run_dict, log=0, save=0, figname="Height(grains)"):
     'Starting from an empty system, measure and plot the total height of the pile
     as a function of time t for a range of system sizes.'
 
-    :param size: int, how big is system?
-    :param p: when p=1, all thresh is 1, when p =0, all thresh is 2.
-    :param t_max: cast into int, how many grains do we add?
-    :param seed: int, change this to generate different runs.
+    :param run_dict: run_dict is a dictionary with information about ...
+
+     size: int, how big is system?
+     p: when p=1, all thresh is 1, when p =0, all thresh is 2.
+     t_max: cast into int, how many grains do we add?
+     seed: int, change this to generate different runs.
     :param log: bool, generate linear plot or loglog plot?
     :param save: bool, do you want to save the figure?
     """
@@ -605,7 +657,7 @@ def main_2c(run_dicts):
 
     for run_dict in run_dicts:
         sizelist.append(run_dict['size'])
-        sizelist.append(run_dict['size']) # This duplication is because main_2c_plot loops over range(,,step=2)
+        sizelist.append(run_dict['size'])  # This duplication is because main_2c_plot loops over range(,,step=2)
         scaled_times, scaled_heights = main_2c_measure(run_dict)
         scaled_heights = moving_average(scaled_heights)
         time_height_pair_list.append(scaled_times)
@@ -652,9 +704,9 @@ def main_2d_plot(syzes, crossovers, fig=None, ax=None):
     :param crossovers: list of float, cross-over times.
     :return: lovely plot of arbitrary number of system sizes.
     """
-    if fig==None:
+    if fig is None:
         fig = plt.figure()
-    if ax==None:
+    if ax is None:
         ax = fig.add_subplot(1, 1, 1)
 
     ax.set_xlabel("system size")
@@ -713,7 +765,7 @@ def main_2d_ode(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials=3, seed=0):
      :param: sizes, list of system sizes to calculate and plot.
      :param: p, probability threshhold slope height is 1 rather than 2.
      :param: trials, int how many data points would you like for each system size
-     :param: seed, int where should the random generator start. Note that for non-deterministic runs you need to change this.
+     :param: seed, int where should the random generator start. For non-deterministic runs you need to change this.
      :return: cross-over time plot for an arbitrary number of systems. Plotted with <z>L**2(1+1/L)/2 theoretical reference.
      """
 
@@ -849,30 +901,88 @@ def main_2e(run_dicts, scaling=1):
 def main_2f_measure(run_dict):
     return None
 
+
 def main_2f_plot(ax, fig):
     return None
 
-def main_2f(run_dicts):
+
+def main_2f(run_dicts, scaling = 1):
+    """
+
+    :param run_dicts:
+    :param scaling: do you want to return the scaled linear regression (1) or original data (0)?
+    :return: fig, ax, a plot of data.
+    """
+
     fig = None
     ax = None
     sizelist = []
+    h_av_tlist = []
     stdev_list = []
 
     for run_dict in run_dicts:
         size = run_dict["size"]
         start_time = int(cross_estimate(size))
+        h_av_t = main_2e_measure(run_dict, start_time)
         stdev = standard_deviation(np.array(run_dict["heights"]), start_time)
 
         sizelist.append(size)
+        h_av_tlist.append(h_av_t)
         stdev_list.append(stdev)
+        sizearray = np.array(sizelist)
+        stdev_array = np.array(stdev_list)
 
-    fig, ax = plt.subplots(1,1)
-    ax.plot(sizelist, stdev_list, 'bo')
-    ax.set_xlabel("System Size")
-    ax.set_ylabel("Standard Deviation of time average height")
-    ax.set_title("Task 2f")
+    if scaling == 1:
+        fig, ax = plt.subplots(1,1)
+
+        eks = np.log10(sizearray)
+        r = scipy.stats.linregress(eks, stdev_array)
+        fit = np.polynomial.polynomial.polyval(eks, [r.intercept, r.slope]) #log fit.
+        #inverse_poly = lambda L,w, c: L**(1/w)+c
+        #p_fit, more = scipy.optimize.curve_fit(inverse_poly, sizearray, stdev_array, p0=[2, -0.4])
+        plo = 1
+
+        if plo:
+            #ax.plot(sizearray, stdev_list, label='data')
+            #ax.plot(sizearray, inverse_poly(sizearray, *p_fit),label='L**1/{} + {}'.format(p_fit[0],p_fit[1]))
+            ax.plot(eks, stdev_list, label='data')
+            ax.plot(eks, fit, label = 'sigma = {:.3}L{:.3}'.format(r.slope, r.intercept))
+            ax.plot(eks, np.polynomial.polynomial.polyval(eks, [0, 1]), label='simpler_hypothesis')
+
+            #ax.set_xlabel('System Size')
+            #ax.set_title('inverse polynomial fit.')
+
+            ax.set_xlabel("log_10(System Size)")
+            ax.set_ylabel("Standard Deviation of time average height")
+            ax.set_title("Semilog fit to sigma_h(L) | r^2: {}".format(r.rvalue**2))
+
+        else:
+            #ax.plot(sizearray, stdev_array - inverse_poly(sizearray, *p_fit))
+            #ax.set_xlabel('System Size')
+            #ax.set_title('Inverse polynomial residual fit')
+
+            ax.plot(eks, stdev_array - fit, label='residuals')
+            ax.set_xlabel('log_10(system size)')
+            ax.set_ylabel('data-fit')
+            ax.set_title('residual fit')
+
+        ax.legend()
+
+        return fig, ax, r
+
+
+    else:
+        fig, ax = plt.subplots(1,1)
+
+        ax.plot(sizelist, stdev_list, 'bo')
+        ax.set_xlabel("System Size")
+        ax.set_ylabel("Standard Deviation of time average height")
+        ax.set_title("Task 2f")
+
+
 
     return fig, ax
+
 
 def main_2g_measure(run_dict):
     """
@@ -944,6 +1054,7 @@ def main_2g(run_dicts):
 def main_3a():
     raise NotImplementedError
 
+
 def supermain(func, *args, **kwargs):
     """
     This is a handler for main_2a, main_2c, main_2e, main_2f, main_2g
@@ -964,6 +1075,7 @@ def supermain(func, *args, **kwargs):
         for run_dict in run_dicts:
             fig2a = func(run_dict, *args, **kwargs)
         return fig2a
+
 
 def supermain2(func, *args, **kwargs):
     """
@@ -991,6 +1103,7 @@ def supermain2(func, *args, **kwargs):
         for run_dict in run_dicts:
             fig2a = func(run_dict, *args, **kwargs)
         return fig2a
+
 
 if __name__ == "__main__":
     supermain(main_2a)
