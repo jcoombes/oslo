@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b94928a1-eeff-4836-9f79-e9b67b98b54c" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/oslotwo.py" afterPath="$PROJECT_DIR$/oslotwo.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -85,8 +86,8 @@
           <file leaf-file-name="oslotwo.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/oslotwo.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="231">
-                  <caret line="486" column="0" lean-forward="true" selection-start-line="486" selection-start-column="0" selection-end-line="486" selection-end-column="0" />
+                <state relative-caret-position="369">
+                  <caret line="362" column="79" lean-forward="false" selection-start-line="362" selection-start-column="79" selection-end-line="362" selection-end-column="79" />
                   <folding />
                 </state>
               </provider>
@@ -99,8 +100,8 @@
           <file leaf-file-name="oslotwo.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/oslotwo.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="394">
-                  <caret line="429" column="20" lean-forward="false" selection-start-line="429" selection-start-column="20" selection-end-line="429" selection-end-column="20" />
+                <state relative-caret-position="399">
+                  <caret line="869" column="37" lean-forward="false" selection-start-line="869" selection-start-column="37" selection-end-line="869" selection-end-column="37" />
                   <folding />
                 </state>
               </provider>
@@ -120,19 +121,11 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>relaxation</find>
-      <find>xlab</find>
-      <find>relaxation_</find>
-      <find>poly</find>
-      <find>main_2a_plo</find>
-      <find>main_2d</find>
-      <find>loglog</find>
       <find>i in</find>
       <find>leg</find>
       <find>matplo</find>
       <find>steady</find>
       <find>main_2a_measure</find>
-      <find>cross</find>
       <find>cross_estimate</find>
       <find>2c</find>
       <find>2a</find>
@@ -141,15 +134,23 @@
       <find>estim</find>
       <find>cros</find>
       <find>main_2c</find>
-      <find>main_2e</find>
-      <find>time_av</find>
       <find>run_dict['heights']</find>
-      <find>main_2a</find>
       <find>picklif</find>
-      <find>2e</find>
       <find>size</find>
       <find>empirical</find>
       <find>syze</find>
+      <find>cross</find>
+      <find>scatt</find>
+      <find>2e</find>
+      <find>pick</find>
+      <find>time_</find>
+      <find>time_av</find>
+      <find>main_2a</find>
+      <find>main_2e</find>
+      <find>time_average</find>
+      <find>stan</find>
+      <find>super</find>
+      <find>stand</find>
     </findStrings>
     <replaceStrings>
       <replace>site</replace>
@@ -173,7 +174,8 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-8" />
+    <option name="x" value="-9" />
+    <option name="y" value="-9" />
     <option name="width" value="976" />
     <option name="height" value="1038" />
   </component>
@@ -272,13 +274,14 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-9" y="-9" width="1938" height="1048" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.0890625" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.24780701" sideWeight="0.080729164" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32705098" sideWeight="0.49583334" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26864034" sideWeight="0.9192708" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.23026316" sideWeight="0.9192708" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39978448" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -303,6 +306,67 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/test_suite.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2205">
+          <caret line="157" column="38" lean-forward="false" selection-start-line="157" selection-start-column="38" selection-end-line="157" selection-end-column="39" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+            <element signature="e#156#662#0" expanded="false" />
+            <element signature="e#2429#3818#0" expanded="false" />
+            <element signature="e#3872#4308#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oslo.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2415">
+          <caret line="433" column="18" lean-forward="false" selection-start-line="433" selection-start-column="11" selection-end-line="433" selection-end-column="18" />
+          <folding>
+            <element signature="e#973#991#0" expanded="true" />
+            <element signature="e#1488#1698#0" expanded="false" />
+            <element signature="e#1729#2358#0" expanded="false" />
+            <element signature="e#2400#3016#0" expanded="false" />
+            <element signature="e#3069#3419#0" expanded="false" />
+            <element signature="e#3460#4683#0" expanded="false" />
+            <element signature="e#4736#5890#0" expanded="false" />
+            <element signature="e#5941#7378#0" expanded="false" />
+            <element signature="e#7440#7674#0" expanded="false" />
+            <element signature="e#7700#7797#0" expanded="false" />
+            <element signature="e#7847#8578#0" expanded="false" />
+            <element signature="e#8614#8924#0" expanded="false" />
+            <element signature="e#8972#10782#0" expanded="false" />
+            <element signature="e#10814#11024#0" expanded="false" />
+            <element signature="e#11065#11720#0" expanded="false" />
+            <element signature="e#11767#12140#0" expanded="false" />
+            <element signature="e#13351#13722#0" expanded="false" />
+            <element signature="e#13775#14591#0" expanded="false" />
+            <element signature="e#15340#15614#0" expanded="false" />
+            <element signature="e#16326#17865#0" expanded="false" />
+            <element signature="e#17951#19921#0" expanded="false" />
+            <element signature="e#19972#20900#0" expanded="false" />
+            <element signature="e#20943#21569#0" expanded="false" />
+            <element signature="e#21651#23251#0" expanded="false" />
+            <element signature="e#23332#25165#0" expanded="false" />
+            <element signature="e#24501#24520#0" expanded="false" />
+            <element signature="e#25227#25440#0" expanded="false" />
+            <element signature="e#25499#26327#0" expanded="false" />
+            <element signature="e#26404#27906#0" expanded="false" />
+            <element signature="e#28722#29452#0" expanded="false" />
+            <element signature="e#29914#29939#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oslotwo.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="42">
@@ -1231,8 +1295,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/oslotwo.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="231">
-          <caret line="486" column="0" lean-forward="true" selection-start-line="486" selection-start-column="0" selection-end-line="486" selection-end-column="0" />
+        <state relative-caret-position="399">
+          <caret line="869" column="37" lean-forward="false" selection-start-line="869" selection-start-column="37" selection-end-line="869" selection-end-column="37" />
           <folding />
         </state>
       </provider>

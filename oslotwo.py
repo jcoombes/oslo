@@ -10,10 +10,7 @@ take mean of crossover_times for a given system size. create a dict of system si
 measure height averaged over time.
 2d: does this match with average heights from main_2a/system size?
 
-task2e: We have a gorgeous linear fit. This is a first approximation for a0
-Can we use a more sophisticated fitting function to find w1, a1, a0?
-Change the corrections to scaling graph to make the line labels more useful, how about the number of timesteps averaged over t_max-start_time?
-
+task2e: hooray, works. Can we do linear regression on our supermain2(main_2e, scaling=1) plot?
 task2f: all of it.
 task2g: theoretical > data collapse > Experiment matches theory?
 """
@@ -27,7 +24,7 @@ import seaborn as sns  # makes pretty figures
 sns.set()
 import datetime  # we want to uniquely name figures. I could use GUID, but I prefer this method.
 import pickle
-
+import scipy.stats
 
 def drive(slopes):
     """
@@ -352,7 +349,7 @@ def time_average(arr, start_time):
     :return mean: int, the function averaged with time.
     """
     steady_state_arr = arr[start_time:]  # T implicitly defined here, as t_max(the length of arr) minus t_init.
-    return steady_state_arr.sum() / steady_state_arr.size
+    return steady_state_arr.sum(dtype=np.int64) / steady_state_arr.size
 
 
 def standard_deviation(arr, start_time):
@@ -363,7 +360,7 @@ def standard_deviation(arr, start_time):
     :return standard_dev: float, the standard deviation.
     """
     arr_squared = arr * arr
-    var = time_average(arr_squared, start_time) - time_average(arr) ** 2
+    var = time_average(arr_squared, start_time) - time_average(arr, start_time) ** 2
     standard_dev = np.sqrt(var)
     return standard_dev
 
@@ -417,7 +414,7 @@ def pickle_cross(size, p, trials, seed, cross, filename='cross'):
     :param filename: Suggest using a combination of input parameters?
     :return: Success string, containing location of saved files.
     """
-    with open('pickle/cross' + str(filename) + '.pickle', 'wb') as f:
+    with open('pickle/cross/' + str(filename) + '.pickle', 'wb') as f:
         picklestring = pickle.dumps(
             {"size" : size, "p" : p, "trials" : trials, "seed" : seed, "cross": cross}
             )
@@ -438,6 +435,7 @@ def cross_measure(sizes, p, trials, seed):
 
     for size in sizes:
         for j in range(trials):
+            print(j,end=" ")
             slopes, thresh = relax_and_thresh_init(size, p, seed + j)
             crossed = False
             tc = 0
@@ -735,7 +733,6 @@ def main_2d_ode(sizes=[4, 8, 16, 32, 64, 128], p=0.5, trials=3, seed=0):
 
     empirical_x = np.array(np.linspace(0, 260, 261))
     empirical_y = quadratic_with_no_contant(empirical_x, *coefficients)
-    # residuals = full[0]
 
     fig = main_2d_plot(sizelist, crossovers)
     ax = fig.gca()
@@ -781,7 +778,7 @@ def main_2e_plot(size, h_av_t, fig=None, ax=None):
     return fig, ax
 
 
-def main_2e(run_dicts):
+def main_2e(run_dicts, scaling=1):
     """
     Solves task 2e.
 
@@ -804,29 +801,50 @@ def main_2e(run_dicts):
         size = run_dict["size"]
         start_time = int(cross_estimate(size))
         h_av_t = main_2e_measure(run_dict, start_time)
-        fig, ax = main_2e_plot(size, h_av_t, fig, ax)
+        if not scaling:
+            fig, ax = main_2e_plot(size, h_av_t, fig, ax)
 
         sizelist.append(size)
         h_av_tlist.append(h_av_t)
 
-    sizelist_array = np.array(sizelist)
-    h_av_tlist_array = np.array(h_av_tlist)
+    sizelist_array = np.array(sizelist) #L
+    h_av_tlist_array = np.array(h_av_tlist) #<h(t, L)> = a0L (1-a1L^{-w1})
 
-    def fit_func(l, a0):
-        return a0 * l
+    if scaling:
+        fig2, ax2 = plt.subplots(1, 1)
 
-    coefficients, covariance = opt.curve_fit(fit_func, sizelist_array, h_av_tlist_array)
+        a0 = np.linspace(1.728, 1.736, 9) #This breaks if start < 1.728 because log(x<0)
+        r = []
+        for a0_potential in a0:
+            eks = sizelist_array
+            why = a0_potential -  h_av_tlist_array/sizelist_array
+            r.append(scipy.stats.linregress(np.log10(eks), np.log10(why)))
 
-    # polynomial_coefficients, full = poly.polynomial.polyfit(sizelist_array, crossovers_array, 2, full=True)
 
-    empirical_x = np.array(np.linspace(0, 1030, 1031))
-    empirical_y = fit_func(empirical_x, *coefficients)
-    # residuals = full[0]
+            ax2.loglog(eks, why,'o', label="a0: {:.4}".format(a0_potential))
+        ax2.set_xlabel("system size")
+        ax2.set_ylabel("a0-<h>/L")
+        ax2.legend()
 
-    ax.plot(empirical_x, empirical_y, label="Empirical fit slope: {:.3}".format(coefficients[0]))
-    ax.legend()
+        return fig2, ax2, r #r[-3] is the closest fit, a0=1.734!
 
-    return fig, coefficients
+    else:
+
+        def fit_func(l, a0):
+            return a0 * l
+
+        coefficients, covariance = opt.curve_fit(fit_func, sizelist_array, h_av_tlist_array)
+
+        # polynomial_coefficients, full = poly.polynomial.polyfit(sizelist_array, crossovers_array, 2, full=True)
+
+        empirical_x = np.array(np.linspace(0, max(sizelist)+5, max(sizelist)+6))
+        empirical_y = fit_func(empirical_x, *coefficients)
+        # residuals = full[0]
+
+        ax.plot(empirical_x, empirical_y, label="Empirical fit slope: {:.3}".format(coefficients[0]))
+        ax.legend()
+
+        return fig, coefficients
 
 def main_2f_measure(run_dict):
     return None
@@ -835,9 +853,26 @@ def main_2f_plot(ax, fig):
     return None
 
 def main_2f(run_dicts):
+    fig = None
+    ax = None
+    sizelist = []
+    stdev_list = []
+
     for run_dict in run_dicts:
-        pass
-    return None
+        size = run_dict["size"]
+        start_time = int(cross_estimate(size))
+        stdev = standard_deviation(np.array(run_dict["heights"]), start_time)
+
+        sizelist.append(size)
+        stdev_list.append(stdev)
+
+    fig, ax = plt.subplots(1,1)
+    ax.plot(sizelist, stdev_list, 'bo')
+    ax.set_xlabel("System Size")
+    ax.set_ylabel("Standard Deviation of time average height")
+    ax.set_title("Task 2f")
+
+    return fig, ax
 
 def main_2g_measure(run_dict):
     """
@@ -925,6 +960,33 @@ def supermain(func, *args, **kwargs):
     try:
         return func(run_dicts, *args, **kwargs)
     except TypeError: #This is a slight bodge because main_2a only accepts one dict at a time.
+        fig2a = None
+        for run_dict in run_dicts:
+            fig2a = func(run_dict, *args, **kwargs)
+        return fig2a
+
+def supermain2(func, *args, **kwargs):
+    """
+    same as supermain but with a sample size of 1e7 rather than 1e6.
+    Gathers a whole bunch of run_dicts from local files and tries to run them.
+
+    :param func: main_2a, main_2c, main_2e, main_2f, main_2g
+    :param args:
+    :param kwargs:
+    :return: output of func.
+    """
+
+    run_8, run_16, run_32, run_64 =       depicklification("81e7_5"),       depicklification("161e7_5"), \
+                                          depicklification("321e7_5"),      depicklification("641e7_5")
+    run_128, run_256, run_512, run_1024 = depicklification("1281e7_5"), depicklification("2561e7_5"), \
+                                          depicklification("5121e7_6"), depicklification("10241e7_5")
+
+    run_dicts = [run_8, run_16, run_32, run_64, run_128, run_256, run_512, run_1024]
+    try:
+        return func(run_dicts, *args, **kwargs)
+    except TypeError: #This is a slight bodge because main_2a only accepts one dict at a time.
+        if not 'main_2a' in str(func):
+            raise TypeError
         fig2a = None
         for run_dict in run_dicts:
             fig2a = func(run_dict, *args, **kwargs)
