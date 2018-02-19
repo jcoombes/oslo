@@ -1051,8 +1051,88 @@ def main_2g(run_dicts):
     return fig
 
 
-def main_3a():
+def main_3a_measure(s):
+    """
+
+    :param s: something that can cast to np.array, time series of avalanches, unsorted.
+    :return: normalised avalanche size probability.
+    """
+    s_array = np.array(s)
+    sorted_sizes, sorted_frequencies = np.unique(s_array, return_counts=True)
+
+    p_norm = sorted_frequencies/s_array.size
+    return sorted_sizes, p_norm
+
+
+def main_3a_plot():
     raise NotImplementedError
+
+
+def main_3a(run_dicts):
+    """
+    Using the log-binned data, plot the avalanche size probabilities P_N(s,L) vs avalanche
+    size s for system sizes L = 4, 8, 16, 32, 64, 128, 256 on the same plot for a reasonably
+    large N (I'm choosing 10**7 here). State clearly how you are processing the data before
+    plotting them, Describe qualitatively your results.
+
+    :param run_dicts:
+    :return:
+    """
+    scale = 1.2
+    fig, ax = plt.subplots(1,1)
+
+    for run_dict in run_dicts[:-2]:
+        s = run_dict['avalanches']
+        sorted_sizes, p_norm = main_3a_measure(s)
+
+        lb_x, lb_y = lb.logbin(s, scale=scale, zeros=True)
+        ax.loglog(sorted_sizes, p_norm, '.', label = 'L: {} data'.format(run_dict['size']))
+        if run_dict['size'] > 128:
+            ax.loglog(lb_x, lb_y, '>')
+        else:
+            ax.loglog(lb_x, lb_y)
+    ax.set_xlabel('Avalanche size')
+    ax.set_ylabel('P_N(s, L)')
+    ax.set_title('Normalised Avalanche Size Probability')
+    ax.legend()
+
+    return fig, ax
+
+def main_3b(run_dicts):
+    """
+    Test if P_N(s, L) are consistent with the finite size scaling ansatz,
+    P_N(s, L) proportional to (s**-tau_s)G(s/(L^D)) for L >> 1, s >> 1.
+
+    and estimate the avalanche dimension D and the avalanche-size exponent tau_s by performing
+    a data collapse.
+
+    :return:
+    """
+    fig, ax = plt.subplots(1,1)
+
+    for tau_s in np.linspace(1.5, 1.68,7):
+        for run_dict in run_dicts:
+            s = run_dict['avalanches']
+            sorted_sizes, p_norm = main_3a_measure(s)
+            lb_x, lb_y = lb.logbin(s, scale=1.2, zeros=True)
+
+            D = 2
+            #taus = 1.6
+
+            xx = lb_x/((run_dict['size'])**D)
+            yy = (lb_x**tau_s) * lb_y
+
+            ax.loglog(lb_x,yy,label='L: {}, tau: {}'.format(run_dict['size'], tau_s))
+
+        ax.set_xlabel("S/L^D")
+        ax.set_ylabel("S^tau_s P(s, L))")
+        ax.set_title("Avalanche size probability data collapse.")
+
+    ax.legend()
+
+    return fig, ax
+
+
 
 
 def supermain(func, *args, **kwargs):
@@ -1092,8 +1172,9 @@ def supermain2(func, *args, **kwargs):
                                           depicklification("321e7_5"),      depicklification("641e7_5")
     run_128, run_256, run_512, run_1024 = depicklification("1281e7_5"), depicklification("2561e7_5"), \
                                           depicklification("5121e7_6"), depicklification("10241e7_5")
+    run_2048, run_4096 = depicklification("20481e7_6"), depicklification("40961e7_6")
 
-    run_dicts = [run_8, run_16, run_32, run_64, run_128, run_256, run_512, run_1024]
+    run_dicts = [run_512, run_1024, run_2048, run_4096]
     try:
         return func(run_dicts, *args, **kwargs)
     except TypeError: #This is a slight bodge because main_2a only accepts one dict at a time.
@@ -1104,13 +1185,27 @@ def supermain2(func, *args, **kwargs):
             fig2a = func(run_dict, *args, **kwargs)
         return fig2a
 
+def supermain3(func, *args, **kwargs):
+    """
+    This function takes pickled run data for avalanche size probability used in task 3.
+
+    :return: func, evaluated with args and kwargs over the run_dicts in ava.
+    """
+    filenames = ['ava/ava41e7_5','ava/ava81e7_5','ava/ava161e7_5','ava/ava321e7_5', \
+                 'ava/ava641e7_5','ava/ava1281e7_5','ava/ava2561e7_5','ava/ava5121e7_5',\
+                 'ava/ava10241e7_5'] #Remember to add 2048 and 4096 if they finish in time.
+
+    run_dicts = [depicklification(filename) for filename in filenames]
+
+    return func(run_dicts,*args, **kwargs)
+
 
 if __name__ == "__main__":
     supermain(main_2a)
     supermain(main_2c)
     supermain(main_2d)
     supermain(main_2e)
-    #supermain(main_2f)
+    supermain(main_2f)
     supermain(main_2g)
 
     #supermain3(main_3a)
